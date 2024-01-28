@@ -14,19 +14,20 @@ pipeline {
                 }
             }
         }
-		stage('Force Cleanup') {
-        steps {
-            script {
-                // Stop and remove all running containers
-                sh 'docker stop $(docker ps -a -q) || true'
-                sh 'docker rm $(docker ps -a -q) || true'
+        
+        stage('Force Cleanup') {
+            steps {
+                script {
+                    // Stop and remove all running containers
+                    sh 'sudo docker stop $(sudo docker ps -a -q) || true'
+                    sh 'sudo docker rm $(sudo docker ps -a -q) || true'
 
-                // Remove all Docker images
-                sh 'docker rmi $(docker images -q) || true'
-				}
-			}
-		}
-		
+                    // Remove all Docker images
+                    sh 'sudo docker rmi $(sudo docker images -q) || true'
+                }
+            }
+        }
+        
         stage('Install Git') {
             steps {
                 script {
@@ -48,8 +49,9 @@ pipeline {
         stage('Install Docker Compose') {
             steps {
                 script {
-                    sh 'sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose'
+                    sh 'sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose'
                     sh 'sudo chmod +x /usr/local/bin/docker-compose'
+                    sh 'sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose'
                     sh 'docker-compose version'
                 }
             }
@@ -59,7 +61,7 @@ pipeline {
             steps {
                 script {
                     sh 'sudo yum install -y git'
-                    sh 'rm -rf /tmp/jenkins-cicd-docker'
+                    sh 'sudo rm -rf /tmp/jenkins-cicd-docker'
                     sh 'git clone https://github.com/awscloudrockers/jenkins-cicd-docker.git /tmp/jenkins-cicd-docker'
                     sh 'ls /tmp/jenkins-cicd-docker'
                 }
@@ -69,7 +71,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh "docker build -t ${DOCKER_IMAGE_NAME} /tmp/jenkins-cicd-docker/"
+                    sh "sudo docker build -t ${DOCKER_IMAGE_NAME} /tmp/jenkins-cicd-docker/"
                 }
             }
         }
@@ -77,7 +79,7 @@ pipeline {
         stage('Show Docker Images') {
             steps {
                 script {
-                    sh 'docker images'
+                    sh 'sudo docker images'
                 }
             }
         }
@@ -85,15 +87,7 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 script {
-                    sh 'docker run -dit --name custom-container ${DOCKER_IMAGE_NAME}'
-                }
-            }
-        }
-
-        stage('Show Docker Containers') {
-            steps {
-                script {
-                    sh 'docker ps -a'
+                    sh 'sudo docker run -dit --name custom-container ${DOCKER_IMAGE_NAME}'
                 }
             }
         }
@@ -101,7 +95,9 @@ pipeline {
         stage('Login to DockerHub') {
             steps {
                 script {
-                    sh "echo \${DOCKERHUB_CREDENTIALS_PSW} | docker login -u \${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
+                    withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'DOCKERHUB_CREDENTIALS_PSW', usernameVariable: 'DOCKERHUB_CREDENTIALS_USR')]) {
+                        sh "echo \${DOCKERHUB_CREDENTIALS_PSW} | sudo docker login -u \${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
+                    }
                 }
             }
         }
@@ -109,7 +105,7 @@ pipeline {
         stage('Push Docker Image to DockerHub') {
             steps {
                 script {
-                    sh "docker push ${DOCKER_IMAGE_NAME}"
+                    sh "sudo docker push ${DOCKER_IMAGE_NAME}"
                 }
             }
         }
