@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'DOCKER_IMAGE_NAME', description: 'Enter the Docker image name', defaultValue: 'shivanandareddy452/custom-img-17-04-2024')
+        string(name: 'DOCKER_IMAGE_NAME', description: 'Enter the Docker image name', defaultValue: 'hiteshcg15/custom-img-17-04-2024')
     }
 
     environment {
@@ -106,7 +106,7 @@ pipeline {
             steps {
                 script {
                     withCredentials([string(credentialsId: 'dockerhub_id', variable: 'DOCKERHUB_CREDENTIALS_PSW')]) {
-                        sh "echo \${DOCKERHUB_CREDENTIALS_PSW} | sudo docker login -u shivanandareddy452 --password-stdin"
+                        sh "echo \${DOCKERHUB_CREDENTIALS_PSW} | sudo docker login -u hiteshcg15 --password-stdin"
                     }
                 }
             }
